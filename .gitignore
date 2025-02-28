@@ -1,0 +1,17 @@
+# Virtual Environment
+semhub/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temp files
+temp_files/
+
+# Environment variables
+.env
+
+# System files
+.DS_Store
