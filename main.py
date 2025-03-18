@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from init import gemini
 from timetable.routes.timetable_routes import router as timetable_router
+from timetable.routes.database_routes import router as db_router
 
 app = FastAPI()
 
 app.include_router(timetable_router,prefix="/api/timetable")
+app.include_router(db_router,prefix="/api/timetable")
 
 
 @app.get("/")

@@ -18,6 +18,7 @@ def make_time_table(timetable):
                 continue
             for day_time in slots[slot.strip()]:
                 schedule[day_time[0]].append([day_time[1],sub_name.strip()])
+    print(schedule)
     return merge_and_sort_slots(schedule)
 
 def convert_to_24hr(time_str):

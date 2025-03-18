@@ -35,7 +35,7 @@ def createTimeTable(file:UploadFile):
         processed_response = [line.split("-") for line in response_lines]
 
         #print(processed_response)
-
+        
         return make_time_table(processed_response)
 
 

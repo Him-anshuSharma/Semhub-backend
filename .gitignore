@@ -9,6 +9,7 @@ __pycache__/
 
 # Temp files
 temp_files/
+/db_creds.json
 
 # Environment variables
 .env
