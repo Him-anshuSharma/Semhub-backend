@@ -1,12 +1,13 @@
 from fastapi import UploadFile, HTTPException
 from timetable.utils.timetable_formatter import make_time_table
+import timetable.controllers.db_controller as dbc
 import os
 import constants
 import shutil
 from PIL import Image
 from init import gemini
 
-def createTimeTable(file:UploadFile):
+def createTimeTable(file:UploadFile ,id:str):
      # Validate file type
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in constants.ALLOWED_EXTENSIONS:
@@ -36,7 +37,9 @@ def createTimeTable(file:UploadFile):
 
         #print(processed_response)
         
-        return make_time_table(processed_response)
+        timetable = make_time_table(processed_response)
+        dbc.save_timetable(timetable, id)
+        return timetable
 
 
     finally:
