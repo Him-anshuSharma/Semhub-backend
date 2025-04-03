@@ -1,6 +1,7 @@
-from fastapi import UploadFile
+from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 class Message(BaseModel):
     convo: str
-    file: UploadFile = None
+    file: UploadFile = File(None)
+    
