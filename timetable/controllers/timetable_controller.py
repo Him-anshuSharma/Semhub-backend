@@ -1,6 +1,6 @@
 from fastapi import UploadFile, HTTPException
 from timetable.utils.timetable_formatter import make_time_table
-import timetable.controllers.db_controller as dbc
+import database.controllers.db_controller as dbc
 import os
 import constants
 import shutil

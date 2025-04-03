@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from timetable.controllers.db_controller import save_timetable
+from database.controllers.db_controller import save_timetable
 
 router = APIRouter();
 
