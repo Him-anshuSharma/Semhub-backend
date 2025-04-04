@@ -8,9 +8,10 @@ router = fastapi.APIRouter()
 @router.post("/send-message")
 async def send_text(
     convo: str = fastapi.Form(...), 
+    timetable: str = fastapi.Form(...),
     file: fastapi.UploadFile = fastapi.File(None)
 ):
     message = Message(convo=convo)
-    res = await chatController.sendText(message)
+    res = await chatController.sendText(message,timetable)
     print(res)
     return res
