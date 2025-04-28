@@ -1,16 +1,16 @@
 import os
-from google import genai
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
 
+# Load .env at the very start!
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+from fastapi import FastAPI
+from routers import onboarding
+from init import client  # Now GEMINI_API_KEY is loaded before this runs
 
 app = FastAPI(title="My FastAPI Backend", version="1.0.0")
+app.include_router(onboarding.router, prefix="/api/v2", tags=["onboarding"])
 
-
-# Root endpoint
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to your FastAPI backend!"}
