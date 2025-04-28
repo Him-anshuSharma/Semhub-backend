@@ -1,11 +1,14 @@
 import os
+from google import genai
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 
 load_dotenv()
 
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(title="My FastAPI Backend", version="1.0.0")
+
 
 # Root endpoint
 @app.get("/")
