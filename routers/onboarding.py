@@ -1,7 +1,9 @@
 import os
 from fastapi import APIRouter, UploadFile, File
 from init import client
+import json
 from constants import onboarding_prompt as prompt, gemini_model
+from models.onboarding import Response
 
 
 router = APIRouter()
@@ -36,7 +38,9 @@ async def makeprofile(
         model = gemini_model,
         contents=contents
     )
-
-
-    return response.text
+    print("gemini response", response.text)
+    json_data= json.loads(response.text)
+    gemini_response = Response.model_validate(json_data)
+    print(gemini_response.goals)
+    return gemini_response
 
