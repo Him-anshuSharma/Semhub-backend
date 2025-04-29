@@ -35,4 +35,6 @@ onboarding_prompt = """Analyze the user's input (image or voice note) and extrac
 3. Use "course_completion" for syllabus-wide goals.
 4. Omit fields if data is missing (e.g., no deadline → skip "deadline").
 5. Ensure all task/goal titles match the input exactly.
+6. Do not include any triple backticks, code fences, or markdown. Output only the compact JSON string.
+7.Please return the response as a single-line, compact JSON string with no line breaks, indentation, or extra formatting. Do not include any markdown formatting or code blocks-just the raw JSON string.
 """
