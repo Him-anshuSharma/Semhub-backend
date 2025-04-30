@@ -1,10 +1,9 @@
-
 import os
 from app.init import client
 from fastapi import UploadFile, File
 import json
 from constants import onboarding_prompt as prompt, gemini_model
-from models.onboarding import Response
+from app.models.onboarding import Response
 
 async def makeprofile( 
         audios: list[UploadFile] = None,
@@ -37,5 +36,6 @@ async def makeprofile(
     )
     print("gemini response", response.text)
     json_data= json.loads(response.text)
+    print("json_data", json_data)
     gemini_response = Response.model_validate(json_data)
     return gemini_response

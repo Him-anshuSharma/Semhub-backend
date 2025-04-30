@@ -101,4 +101,5 @@ celerybeat-schedule
 .DS_Store
 Thumbs.db
 
-# venv
+
+tempfiles/
