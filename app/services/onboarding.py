@@ -1,6 +1,6 @@
 
 import os
-from init import client
+from app.init import client
 from fastapi import UploadFile, File
 import json
 from constants import onboarding_prompt as prompt, gemini_model

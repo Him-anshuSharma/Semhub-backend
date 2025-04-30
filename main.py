@@ -6,7 +6,7 @@ load_dotenv()
 
 from fastapi import FastAPI
 from routers import onboarding
-from init import client  # Now GEMINI_API_KEY is loaded before this runs
+from app.init import client
 
 app = FastAPI(title="My FastAPI Backend", version="1.0.0")
 app.include_router(onboarding.router, prefix="/api/v2", tags=["onboarding"])
