@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File
-from app.services.onboarding import makeprofile
+from app.services.onboarding_services import makeprofile
 
 
 router = APIRouter()

@@ -3,7 +3,7 @@ from app.init import client
 from fastapi import UploadFile, File
 import json
 from constants import onboarding_prompt as prompt, gemini_model
-from app.models.onboarding import Response
+from app.models.onboarding_models import Response
 
 async def makeprofile( 
         audios: list[UploadFile] = None,
