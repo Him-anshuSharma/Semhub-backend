@@ -2,17 +2,24 @@
 from pydantic import BaseModel
 from typing import List
 
+class Subtask(BaseModel):
+    title: str
+    estimated_hours: float = None
+
 class Task(BaseModel):
     title: str
     type: str
     subject: str
+    deadline: str = None  # Optional field
     priority: str  # Include all fields from JSON
-    subtasks: List[str] = []  # Default empty list if needed
+    estimated_hours: str = None  # Optional field
+    subtasks: List[Subtask] = []
 
 class Goal(BaseModel):
     name: str
     type: str
     target_tasks: List[str]
+    target_date: str = None  # Optional field
 
 class Response(BaseModel):
     tasks: List[Task]

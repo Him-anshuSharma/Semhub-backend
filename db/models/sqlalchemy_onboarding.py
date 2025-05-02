@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, DateTime, Numeric
 from sqlalchemy.orm import relationship, declarative_base
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -11,33 +12,47 @@ goal_task_association = Table(
     Column('task_id', Integer, ForeignKey('tasks.id'))
 )
 
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    firebase_uid = Column(String(255), unique=True, nullable=False)  # Firebase user ID
+    
+    # Relationships
+    tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")
+
 class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    type = Column(String, nullable=False)
-    subject = Column(String, nullable=False)
-    priority = Column(String, nullable=False)
+    title = Column(String(100), nullable=False)
+    type = Column(String(20), nullable=False)
+    subject = Column(String(50), nullable=False)
+    priority = Column(String(10), nullable=False)
+    deadline = Column(DateTime, nullable=True)
+    estimated_hours = Column(Numeric(5,2), nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))  # User association
 
-    # One-to-many: Task has many Subtasks
+    # Relationships
+    user = relationship("User", back_populates="tasks")
     subtasks = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
+    goals = relationship("Goal", secondary=goal_task_association, backref="tasks")
 
 class Subtask(Base):
     __tablename__ = 'subtasks'
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
+    title = Column(String(100), nullable=False)
+    estimated_hours = Column(Numeric(5,2), nullable=True)
     task_id = Column(Integer, ForeignKey('tasks.id'))
     task = relationship("Task", back_populates="subtasks")
 
 class Goal(Base):
     __tablename__ = 'goals'
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    type = Column(String, nullable=False)
+    name = Column(String(100), nullable=False)
+    type = Column(String(20), nullable=False)
+    target_date = Column(DateTime, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))  # User association
 
-    # Many-to-many: Goal has many Tasks
-    target_tasks = relationship(
-        "Task",
-        secondary=goal_task_association,
-        backref="goals"
-    )
+    # Relationships
+    user = relationship("User", back_populates="goals")
+    target_tasks = relationship("Task", secondary=goal_task_association, backref="goals")
