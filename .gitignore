@@ -101,5 +101,8 @@ celerybeat-schedule
 .DS_Store
 Thumbs.db
 
-
+#temp files
 tempfiles/
+
+#constants
+**/constants.py
