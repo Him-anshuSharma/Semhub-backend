@@ -4,11 +4,10 @@ from datetime import datetime
 from fastapi import UploadFile, File, HTTPException
 from typing import List, Optional
 
-# Adjust imports according to your project structure
-from app.init import client
+from app.init_app import client
 from constants import onboarding_prompt as prompt, gemini_model
 from app.models.onboarding_models import Response
-from db.init import get_session
+from db.init_db import get_session
 from app.services.verify_firebase_token import verify_firebase_token
 from db.models.sqlalchemy_onboarding import (
     Task as DbTask,

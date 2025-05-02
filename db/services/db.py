@@ -1,4 +1,4 @@
-from db.init import get_session
+from db.init_db import get_session
 
 session = get_session()
 
