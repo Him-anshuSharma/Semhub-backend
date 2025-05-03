@@ -1,10 +1,9 @@
 from db.init_db import get_session
 
+
 session = get_session()
 
-def add_user(firebase_uid):
-    from models import User  # Import your User model
-    user = User(firebase_uid=firebase_uid)
+def add_user(user):
     session.add(user)
     session.commit()
     session.refresh(user)

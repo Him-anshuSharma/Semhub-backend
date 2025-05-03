@@ -15,7 +15,7 @@ from db.models.sqlalchemy_onboarding import (
     Goal as DbGoal,
     User
 )
-from db.services.db import add_user, add_goal, add_task, add_subtask
+from db.services.db import add_user, add_goal, add_task
 
 async def makeprofile(
     token: str,

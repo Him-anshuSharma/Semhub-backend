@@ -21,7 +21,6 @@ def get_engine():
     return _engine
 
 def get_session():
-
     if _SessionLocal is None:
         raise RuntimeError("Session maker not initialized. Call initialize_database() first.")
     return _SessionLocal()

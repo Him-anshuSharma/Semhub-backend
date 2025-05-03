@@ -15,11 +15,12 @@ goal_task_association = Table(
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
-    firebase_uid = Column(String(255), unique=True, nullable=False)  # Firebase user ID
+    firebase_uid = Column(String(255), unique=True, nullable=False)
     
     # Relationships
     tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
     goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")
+    screen_usages = relationship("ScreenUsage", back_populates="user")
 
 class Task(Base):
     __tablename__ = 'tasks'
@@ -27,15 +28,19 @@ class Task(Base):
     title = Column(String(100), nullable=False)
     type = Column(String(20), nullable=False)
     subject = Column(String(50), nullable=False)
-    priority = Column(String(10), nullable=False)
+    priority = Column(String(10), nullable=True)
     deadline = Column(DateTime, nullable=True)
     estimated_hours = Column(Numeric(5,2), nullable=True)
-    user_id = Column(Integer, ForeignKey('users.id'))  # User association
+    created_at = Column(DateTime, default=datetime.now())  # Fixed default
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)  
+    user_id = Column(Integer, ForeignKey('users.id'))
 
     # Relationships
     user = relationship("User", back_populates="tasks")
     subtasks = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
-    goals = relationship("Goal", secondary=goal_task_association, backref="tasks")
+    target_goals = relationship("Goal", secondary=goal_task_association, back_populates="target_tasks")
+    performance = relationship("Performance", back_populates="task")
 
 class Subtask(Base):
     __tablename__ = 'subtasks'
@@ -51,8 +56,28 @@ class Goal(Base):
     name = Column(String(100), nullable=False)
     type = Column(String(20), nullable=False)
     target_date = Column(DateTime, nullable=True)
-    user_id = Column(Integer, ForeignKey('users.id'))  # User association
+    user_id = Column(Integer, ForeignKey('users.id'))
 
     # Relationships
     user = relationship("User", back_populates="goals")
-    target_tasks = relationship("Task", secondary=goal_task_association, backref="goals")
+    target_tasks = relationship("Task", secondary=goal_task_association, back_populates="target_goals")
+
+class ScreenUsage(Base):
+    __tablename__ = 'screenusage'
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    date = Column(DateTime)
+    screen_time = Column(Numeric(5,2), nullable=False)
+    app_name = Column(String(100), nullable=False)
+    app_category = Column(String(50), nullable=False)
+
+    user = relationship("User", back_populates="screen_usages")
+
+class Performance(Base):  # Fixed class name capitalization
+    __tablename__ = 'performance'
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(DateTime)
+    performance_score = Column(Numeric(5,2), nullable=False)
+    task_id = Column(Integer, ForeignKey('tasks.id'))
+    
+    task = relationship("Task", back_populates="performance")

@@ -1,6 +1,6 @@
 # models/onboarding.py
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class Subtask(BaseModel):
     title: str
@@ -11,7 +11,7 @@ class Task(BaseModel):
     type: str
     subject: str
     deadline: str = None  # Optional field
-    priority: str  # Include all fields from JSON
+    priority: Optional[str]  # Include all fields from JSON
     estimated_hours: str = None  # Optional field
     subtasks: List[Subtask] = []
 
