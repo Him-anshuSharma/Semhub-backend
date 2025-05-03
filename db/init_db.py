@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from db.models.sqlalchemy_onboarding import Base
+from db.models.sqlalchemy_models import Base
 
 _engine = None
 _SessionLocal = None

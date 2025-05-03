@@ -9,13 +9,15 @@ from constants import onboarding_prompt as prompt, gemini_model
 from app.models.onboarding_models import Response
 from db.init_db import get_session
 from app.services.verify_firebase_token import verify_firebase_token
-from db.models.sqlalchemy_onboarding import (
+from db.models.sqlalchemy_models import (
     Task as DbTask,
     Subtask as DbSubtask,
     Goal as DbGoal,
     User
 )
-from db.services.db import add_user, add_goal, add_task
+from db.services.user_services import add_user
+from db.services.task_services import add_task
+from db.services.goal_services import add_goal
 
 async def makeprofile(
     token: str,
