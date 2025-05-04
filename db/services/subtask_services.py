@@ -1,5 +1,5 @@
 from db.services.db_services import session as db  
-from db.models.sqlalchemy_models import Subtask, Task, User
+from db.models.sqlalchemy_models import Subtask, Task
 
 # Sync version (recommended if using standard SQLAlchemy)
 def add_subtask(subtask: Subtask, task: Task):
