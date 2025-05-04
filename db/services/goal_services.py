@@ -1,7 +1,7 @@
 from db.services.db_services import session as db
 from db.models.sqlalchemy_models import Goal, User
 
-def add_goal( goal: Goal, user: User):
+def  add_goal( goal: Goal, user: User):
     goal.user = user  # Associate goal with the user
     db.add(goal)
     db.commit()

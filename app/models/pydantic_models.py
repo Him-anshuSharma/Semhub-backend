@@ -24,7 +24,7 @@ class Task(BaseModel):
 class Goal(BaseModel):
     name: str
     type: str
-    target_tasks: List[str]  # Stores task IDs as strings
+    target_tasks: List[str]  # Stores task titles as strings
     target_date: Optional[str] = None
 
     class Config:
