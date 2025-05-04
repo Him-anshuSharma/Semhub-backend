@@ -13,8 +13,9 @@ from app.init_app import initialize_services
 initialize_services()
 
 # Import routers AFTER initialization
-from app.routers import onboarding_routes
+from app.routers import onboarding_routes,goal_routes
 app.include_router(onboarding_routes.router)
+app.include_router(goal_routes.router)
 
 @app.get("/health")
 async def health_check():
