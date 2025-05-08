@@ -15,7 +15,7 @@ from db.services.task_services import (
     get_tasks_by_user_id_and_goal_id
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/task", tags=["Task"])
 
 # Create Task
 @router.post("/add-task", response_model=Task)

@@ -13,7 +13,7 @@ from db.services.goal_services import (
 )
 from db.services.task_services import add_task,get_task_by_user_id_and_task_title
 
-router = APIRouter()
+router = APIRouter(prefix="/goal", tags=["Goal"])
 
 #create goal
 @router.post("/add-goal", response_model=Goal)

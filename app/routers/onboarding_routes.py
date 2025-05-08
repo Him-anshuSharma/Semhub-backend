@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File
 from app.services.onboarding_services import makeprofile
 from constants import temp_token
 
-router = APIRouter()
+router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
 @router.post("/onboard")
 async def onboard(

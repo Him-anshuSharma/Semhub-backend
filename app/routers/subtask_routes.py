@@ -1,39 +1,47 @@
-from db.services.db_services import session as db
-from db.models.sqlalchemy_models import Subtask
 from fastapi import APIRouter, HTTPException
+from db.services.db_services import session as db
+from db.models.sqlalchemy_models import Subtask as SubtaskORM
+from app.services.pydantic_map_sqlalchemy import (
+    orm_subtask_to_pydantic,
+    pydantic_subtask_to_orm,
+)
+from app.models.pydantic_models import Subtask as PydanticSubtask
 
-router = APIRouter()
+router = APIRouter(prefix="/subtask", tags=["Subtask"])
 
-@router.get("/subtasks/{subtask_id}")
+@router.get("/subtasks/{subtask_id}", response_model=PydanticSubtask)
 async def get_subtask(subtask_id: int):
-    subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
-    if not subtask:
+    subtask_orm = db.query(SubtaskORM).filter(SubtaskORM.id == subtask_id).first()
+    if not subtask_orm:
         raise HTTPException(status_code=404, detail="Subtask not found")
-    return subtask
+    return orm_subtask_to_pydantic(subtask_orm)
 
-@router.post("/subtasks/")
-async def create_subtask(subtask: Subtask):
-    db.add(subtask)
+@router.post("/subtasks/", response_model=PydanticSubtask)
+async def create_subtask(subtask: PydanticSubtask):
+    subtask_orm = pydantic_subtask_to_orm(subtask)
+    db.add(subtask_orm)
     db.commit()
-    db.refresh(subtask)
-    return subtask
+    db.refresh(subtask_orm)
+    return orm_subtask_to_pydantic(subtask_orm)
 
-@router.put("/subtasks/{subtask_id}")
-async def update_subtask(subtask_id: int, updated_subtask: Subtask):
-    subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
-    if not subtask:
+@router.put("/subtasks/{subtask_id}", response_model=PydanticSubtask)
+async def update_subtask(subtask_id: int, updated_subtask: PydanticSubtask):
+    subtask_orm = db.query(SubtaskORM).filter(SubtaskORM.id == subtask_id).first()
+    if not subtask_orm:
         raise HTTPException(status_code=404, detail="Subtask not found")
-    for key, value in updated_subtask.dict(exclude_unset=True).items():
-        setattr(subtask, key, value)
+    # Update fields from the Pydantic model
+    update_data = updated_subtask.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(subtask_orm, key, value)
     db.commit()
-    db.refresh(subtask)
-    return subtask
+    db.refresh(subtask_orm)
+    return orm_subtask_to_pydantic(subtask_orm)
 
 @router.delete("/subtasks/{subtask_id}")
 async def delete_subtask(subtask_id: int):
-    subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
-    if not subtask:
+    subtask_orm = db.query(SubtaskORM).filter(SubtaskORM.id == subtask_id).first()
+    if not subtask_orm:
         raise HTTPException(status_code=404, detail="Subtask not found")
-    db.delete(subtask)
+    db.delete(subtask_orm)
     db.commit()
     return {"message": "Subtask deleted successfully"}
