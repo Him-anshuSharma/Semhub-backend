@@ -25,6 +25,7 @@ async def makeprofile(
     images: List[UploadFile] = File(...)
 ):
     # Verify token and get user UID
+    print("Token:", token)
     user_uid = verify_firebase_token(token)
     if not user_uid:
         raise HTTPException(status_code=401, detail="Invalid token")

@@ -11,5 +11,6 @@ async def onboard(
     images: list[UploadFile] = File(...),
 ):
     tasks_goals = await makeprofile(token, audios, images)
+    print(tasks_goals)
     return tasks_goals
 
