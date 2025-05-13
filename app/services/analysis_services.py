@@ -1,4 +1,5 @@
 from sqlalchemy import func, desc, and_
+from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import numpy as np
@@ -11,16 +12,15 @@ from db.models.sqlalchemy_models import (
 )
 
 class DataAnalyzer:
-    def __init__(self, session):
-        self.session = session
+    def __init__(self):
         self.task_completion_model = None
         self.performance_prediction_model = None
         self.screen_usage_model = None
         self.label_encoders = {}
 
-    def get_user_task_statistics(self, user_id: int) -> Dict[str, Any]:
+    def get_user_task_statistics(self, db: Session, user_id: int) -> Dict[str, Any]:
         """Get comprehensive statistics about a user's tasks."""
-        tasks = self.session.query(Task).filter(Task.user_id == user_id).all()
+        tasks = db.query(Task).filter(Task.user_id == user_id).all()
         
         stats = {
             "total_tasks": len(tasks),
@@ -48,9 +48,9 @@ class DataAnalyzer:
 
         return stats
 
-    def get_user_goal_progress(self, user_id: int) -> List[Dict[str, Any]]:
+    def get_user_goal_progress(self, db: Session, user_id: int) -> List[Dict[str, Any]]:
         """Get progress of all goals for a user."""
-        goals = self.session.query(Goal).filter(Goal.user_id == user_id).all()
+        goals = db.query(Goal).filter(Goal.user_id == user_id).all()
         
         goal_progress = []
         for goal in goals:
@@ -70,11 +70,11 @@ class DataAnalyzer:
         
         return goal_progress
 
-    def get_screen_usage_analysis(self, user_id: int, days: int = 7) -> Dict[str, Any]:
+    def get_screen_usage_analysis(self, db: Session, user_id: int, days: int = 7) -> Dict[str, Any]:
         """Analyze screen usage patterns for a user over the specified number of days."""
         start_date = datetime.now() - timedelta(days=days)
         
-        usage_data = self.session.query(ScreenUsage).filter(
+        usage_data = db.query(ScreenUsage).filter(
             and_(
                 ScreenUsage.user_id == user_id,
                 ScreenUsage.date >= start_date
@@ -112,11 +112,11 @@ class DataAnalyzer:
 
         return analysis
 
-    def get_performance_metrics(self, user_id: int, days: int = 30) -> Dict[str, Any]:
+    def get_performance_metrics(self, db: Session, user_id: int, days: int = 30) -> Dict[str, Any]:
         """Get performance metrics for a user's tasks."""
         start_date = datetime.now() - timedelta(days=days)
         
-        performances = self.session.query(Performance).join(Task).filter(
+        performances = db.query(Performance).join(Task).filter(
             and_(
                 Task.user_id == user_id,
                 Performance.date >= start_date
@@ -160,11 +160,11 @@ class DataAnalyzer:
 
         return metrics
 
-    def get_task_completion_trends(self, user_id: int, days: int = 30) -> Dict[str, Any]:
+    def get_task_completion_trends(self, db: Session, user_id: int, days: int = 30) -> Dict[str, Any]:
         """Analyze task completion trends over time."""
         start_date = datetime.now() - timedelta(days=days)
         
-        tasks = self.session.query(Task).filter(
+        tasks = db.query(Task).filter(
             and_(
                 Task.user_id == user_id,
                 Task.created_at >= start_date
@@ -222,7 +222,7 @@ class DataAnalyzer:
 
         return trends
 
-    def prepare_task_features(self, tasks: List[Task]) -> np.ndarray:
+    def prepare_task_features(self, db: Session, tasks: List[Task]) -> np.ndarray:
         """Prepare features for task-related ML models."""
         features = []
         for task in tasks:
@@ -249,10 +249,10 @@ class DataAnalyzer:
             features.append(feature_vector)
         return np.array(features)
 
-    def predict_task_completion_time(self, user_id: int) -> Dict[str, Any]:
+    def predict_task_completion_time(self, db: Session, user_id: int) -> Dict[str, Any]:
         """Predict completion time for new tasks using ML model."""
         # Get historical completed tasks
-        completed_tasks = self.session.query(Task).filter(
+        completed_tasks = db.query(Task).filter(
             and_(
                 Task.user_id == user_id,
                 Task.completed_at.isnot(None),
@@ -264,7 +264,7 @@ class DataAnalyzer:
             return {"error": "Insufficient historical data for prediction"}
 
         # Prepare features and target
-        X = self.prepare_task_features(completed_tasks)
+        X = self.prepare_task_features(db, completed_tasks)
         y = np.array([(t.completed_at - t.started_at).total_seconds() / 3600 for t in completed_tasks])
 
         # Split data and train model
@@ -287,10 +287,10 @@ class DataAnalyzer:
             ))
         }
 
-    def predict_performance_trend(self, user_id: int) -> Dict[str, Any]:
+    def predict_performance_trend(self, db: Session, user_id: int) -> Dict[str, Any]:
         """Predict future performance trends using ML model."""
         # Get historical performance data
-        performances = self.session.query(Performance).join(Task).filter(
+        performances = db.query(Performance).join(Task).filter(
             Task.user_id == user_id
         ).order_by(Performance.date).all()
 
@@ -318,10 +318,10 @@ class DataAnalyzer:
             "confidence_score": self.performance_prediction_model.score(X_test, y_test)
         }
 
-    def analyze_screen_usage_patterns(self, user_id: int) -> Dict[str, Any]:
+    def analyze_screen_usage_patterns(self, db: Session, user_id: int) -> Dict[str, Any]:
         """Analyze screen usage patterns using ML clustering."""
         # Get screen usage data
-        usage_data = self.session.query(ScreenUsage).filter(
+        usage_data = db.query(ScreenUsage).filter(
             ScreenUsage.user_id == user_id
         ).order_by(ScreenUsage.date).all()
 
@@ -378,14 +378,14 @@ class DataAnalyzer:
             "model_accuracy": self.screen_usage_model.score(X_test, y_test)
         }
 
-    def get_ml_insights(self, user_id: int) -> Dict[str, Any]:
+    def get_ml_insights(self, db: Session, user_id: int) -> Dict[str, Any]:
         """Get comprehensive ML-based insights for a user."""
-        completion_prediction = self.predict_task_completion_time(user_id)
-        performance_trend = self.predict_performance_trend(user_id)
-        screen_patterns = self.analyze_screen_usage_patterns(user_id)
+        completion_prediction = self.predict_task_completion_time(db, user_id)
+        performance_trend = self.predict_performance_trend(db, user_id)
+        screen_patterns = self.analyze_screen_usage_patterns(db, user_id)
         
         return {
             "task_completion_prediction": completion_prediction,
             "performance_trend_prediction": performance_trend,
             "screen_usage_patterns": screen_patterns
-        } 
+        }

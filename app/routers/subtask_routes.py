@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
-from db.services.db_services import session as db
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from db.init_db import get_session as get_db  # Replace with your actual get_db function
 from db.models.sqlalchemy_models import Subtask as SubtaskORM
 from app.services.pydantic_map_sqlalchemy import (
     orm_subtask_to_pydantic,
@@ -10,14 +11,14 @@ from app.models.pydantic_models import Subtask as PydanticSubtask
 router = APIRouter(prefix="/subtask", tags=["Subtask"])
 
 @router.get("/subtasks/{subtask_id}", response_model=PydanticSubtask)
-async def get_subtask(subtask_id: int):
+async def get_subtask(subtask_id: int, db: Session = Depends(get_db)):
     subtask_orm = db.query(SubtaskORM).filter(SubtaskORM.id == subtask_id).first()
     if not subtask_orm:
         raise HTTPException(status_code=404, detail="Subtask not found")
     return orm_subtask_to_pydantic(subtask_orm)
 
 @router.post("/subtasks/", response_model=PydanticSubtask)
-async def create_subtask(subtask: PydanticSubtask):
+async def create_subtask(subtask: PydanticSubtask, db: Session = Depends(get_db)):
     subtask_orm = pydantic_subtask_to_orm(subtask)
     db.add(subtask_orm)
     db.commit()
@@ -25,7 +26,7 @@ async def create_subtask(subtask: PydanticSubtask):
     return orm_subtask_to_pydantic(subtask_orm)
 
 @router.put("/subtasks/{subtask_id}", response_model=PydanticSubtask)
-async def update_subtask(subtask_id: int, updated_subtask: PydanticSubtask):
+async def update_subtask(subtask_id: int, updated_subtask: PydanticSubtask, db: Session = Depends(get_db)):
     subtask_orm = db.query(SubtaskORM).filter(SubtaskORM.id == subtask_id).first()
     if not subtask_orm:
         raise HTTPException(status_code=404, detail="Subtask not found")
@@ -38,7 +39,7 @@ async def update_subtask(subtask_id: int, updated_subtask: PydanticSubtask):
     return orm_subtask_to_pydantic(subtask_orm)
 
 @router.delete("/subtasks/{subtask_id}")
-async def delete_subtask(subtask_id: int):
+async def delete_subtask(subtask_id: int, db: Session = Depends(get_db)):
     subtask_orm = db.query(SubtaskORM).filter(SubtaskORM.id == subtask_id).first()
     if not subtask_orm:
         raise HTTPException(status_code=404, detail="Subtask not found")

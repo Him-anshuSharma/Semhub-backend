@@ -3,12 +3,11 @@ import json
 from datetime import datetime
 from fastapi import UploadFile, File, HTTPException
 from typing import List, Optional
+from sqlalchemy.orm import Session
 
 from app.init_app import client
 from constants import onboarding_prompt as prompt, gemini_model
 from app.models.pydantic_models import Response
-from db.init_db import get_session
-from app.services.verify_firebase_token import verify_firebase_token
 from db.models.sqlalchemy_models import (
     Task as DbTask,
     Subtask as DbSubtask,
@@ -20,23 +19,32 @@ from db.services.task_services import add_task
 from db.services.goal_services import add_goal
 
 async def makeprofile(
-    token: str,
+    db: Session,
+    user_uid: str,  # Changed from token to user_uid
     audios: Optional[List[UploadFile]] = None,
     images: List[UploadFile] = File(...)
 ):
-    # Verify token and get user UID
-    print("Token:", token)
-    user_uid = verify_firebase_token(token)
-    if not user_uid:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    """
+    Process user onboarding data and generate tasks and goals.
     
-    db_session = get_session()
-    user = db_session.query(User).filter_by(firebase_uid=user_uid).first()
+    Args:
+        db: Database session
+        user_uid: Firebase user ID (already verified)
+        audios: Optional list of audio files
+        images: List of image files
+        
+    Returns:
+        Generated tasks and goals
+    """
+    # No need to verify token again as it's already verified
     
+    # Check if user exists in database
+    user = db.query(User).filter_by(firebase_uid=user_uid).first()
+
     if not user:
         # Create new user if not exists
         user = User(firebase_uid=user_uid)
-        add_user(user)
+        add_user(user, db)
 
     # File handling
     DIR = "tempfiles"
@@ -70,19 +78,16 @@ async def makeprofile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI processing failed: {str(e)}")
 
-    add_api_response_to_db(gemini_response, user, db_session)
+    add_api_response_to_db(gemini_response, user, db)
     return gemini_response
 
 def add_api_response_to_db(
     api_response: Response,
     user: User,
-    db_session = None
+    db: Session
 ):
-    if not db_session:
-        db_session = get_session()
-
     db_tasks = {}
-    
+
     try:
         # Process tasks
         for api_task in api_response.tasks:
@@ -94,18 +99,18 @@ def add_api_response_to_db(
                 deadline=datetime.fromisoformat(api_task.deadline) if api_task.deadline else None,
                 estimated_hours=float(api_task.estimated_hours) if api_task.estimated_hours else None,
             )
-            
+
             for api_subtask in api_task.subtasks:
                 db_subtask = DbSubtask(
                     title=api_subtask.title,
                     estimated_hours=api_subtask.estimated_hours
                 )
                 db_task.subtasks.append(db_subtask)
-            
-            add_task(db_task, user)  # Add task to DB
+
+            add_task(db_task, user, db)  # Add task to DB
             db_tasks[api_task.title] = db_task
 
-        db_session.flush()  # Generate IDs for relationships
+        db.flush()  # Generate IDs for relationships
 
         # Process goals
         for api_goal in api_response.goals:
@@ -115,15 +120,15 @@ def add_api_response_to_db(
                 target_date=datetime.fromisoformat(api_goal.target_date) if api_goal.target_date else None,
                 user=user  # Associate with user
             )
-            
+
             for task_title in api_goal.target_tasks:
                 if task_title in db_tasks:
                     db_goal.target_tasks.append(db_tasks[task_title])
-            
-            add_goal(db_goal, user)
 
-        db_session.commit()
-        
+            add_goal(db, db_goal, user)  # Correctly call add_goal with db, db_goal, and user
+
+        db.commit()
+
     except Exception as e:
-        db_session.rollback()
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
