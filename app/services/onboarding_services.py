@@ -92,6 +92,7 @@ def add_api_response_to_db(
         # Process tasks
         for api_task in api_response.tasks:
             db_task = DbTask(
+                id=api_task.id if api_task.id else None,
                 title=api_task.title,
                 type=api_task.type,
                 subject=api_task.subject,
@@ -102,28 +103,31 @@ def add_api_response_to_db(
 
             for api_subtask in api_task.subtasks:
                 db_subtask = DbSubtask(
+                    id=api_subtask.id if api_subtask.id else None,
                     title=api_subtask.title,
                     estimated_hours=api_subtask.estimated_hours
                 )
                 db_task.subtasks.append(db_subtask)
 
             add_task(db_task, user, db)  # Add task to DB
-            db_tasks[api_task.title] = db_task
+            add_task(db_task, user, db)  # Add task to DB
+            db_tasks[db_task.id] = db_task  # Store by ID instead of title
 
         db.flush()  # Generate IDs for relationships
 
         # Process goals
         for api_goal in api_response.goals:
             db_goal = DbGoal(
+                id=api_goal.id if api_goal.id else None,
                 name=api_goal.name,
                 type=api_goal.type,
                 target_date=datetime.fromisoformat(api_goal.target_date) if api_goal.target_date else None,
                 user=user  # Associate with user
             )
 
-            for task_title in api_goal.target_tasks:
-                if task_title in db_tasks:
-                    db_goal.target_tasks.append(db_tasks[task_title])
+            for task_ref in api_goal.target_tasks:
+                if task_ref.id in db_tasks:
+                    db_goal.target_tasks.append(db_tasks[task_ref.id])
 
             add_goal(db, db_goal, user)  # Correctly call add_goal with db, db_goal, and user
 

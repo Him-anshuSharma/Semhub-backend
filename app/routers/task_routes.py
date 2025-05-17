@@ -22,13 +22,15 @@ router = APIRouter(prefix="/task", tags=["Task"])
 # Create Task
 @router.post("/add-task", response_model=Task)
 async def add_task_route(task: Task, user_id: str, db: Session = Depends(get_db)):
-    orm_task = model_map.pydantic_task_to_orm(task)
     try:
         uid = get_user_id(user_id)
         user = get_user_by_firebase_id(uid, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return add_task(orm_task, user, db)
+            
+        orm_task = model_map.pydantic_task_to_orm(task)
+        db_task = add_task(orm_task, user, db)
+        return model_map.orm_task_to_pydantic(db_task)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -59,10 +61,26 @@ async def update_task_route(task_id: int, task: Task, user_id: str, db: Session 
             raise HTTPException(status_code=404, detail="User not found")
         
         existing_task = get_task_by_id(task_id, db)
-        if not existing_task or existing_task.user_id != user.id:
+        if not existing_task:
             raise HTTPException(status_code=404, detail="Task not found")
+            
+        if existing_task.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to update this task")
         
-        updated_task = update_task(model_map.pydantic_task_to_orm(task), db)
+        # Update the existing task's fields
+        existing_task.title = task.title
+        existing_task.type = task.type
+        existing_task.subject = task.subject
+        existing_task.deadline = task.deadline
+        existing_task.priority = task.priority
+        existing_task.estimated_hours = task.estimated_hours
+        
+        # Update subtasks
+        existing_task.subtasks = [
+            model_map.pydantic_subtask_to_orm(st, task_id) for st in task.subtasks
+        ]
+        
+        updated_task = update_task(existing_task, db)
         return model_map.orm_task_to_pydantic(updated_task)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -87,9 +105,9 @@ async def delete_task_route(task_id: int, user_id: str, db: Session = Depends(ge
 
 # Get All Tasks for User
 @router.get("/get-tasks", response_model=list[Task])
-async def get_tasks_route(user_id: str, db: Session = Depends(get_db)):
+async def get_tasks(user_id: str, db: Session = Depends(get_db)):
     try:
-        uid = get_user_id(user_id)
+        uid = await get_user_id(user_id)
         user = get_user_by_firebase_id(uid, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
