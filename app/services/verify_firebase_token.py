@@ -72,3 +72,34 @@ async def verify_firebase_token(credentials: HTTPAuthorizationCredentials = Depe
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authentication failed: {str(e)}"
         )
+
+async def get_verified_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> str:
+    """
+    Verify Firebase ID token and return the user ID.
+    This is the main method that should be used across all APIs for user verification.
+    
+    Args:
+        credentials: HTTP Authorization credentials containing the Firebase token
+        
+    Returns:
+        str: The verified user ID from the Firebase token
+        
+    Raises:
+        HTTPException: If token is invalid or verification fails
+    """
+    try:
+        print("credentials: ",credentials)
+        token = await verify_firebase_token(credentials)
+        if not token or "uid" not in token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials"
+            )
+        return token["uid"]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication failed: {str(e)}"
+        )

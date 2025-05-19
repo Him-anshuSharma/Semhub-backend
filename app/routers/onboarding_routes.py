@@ -1,8 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.services.onboarding_services import makeprofile
 from app.services.verify_firebase_token import verify_firebase_token
-from db.init_db import get_session as get_db  # Replace with your actual get_db function
+from db.init_db import get_session as get_db
+import firebase_admin
+from firebase_admin import auth
+import os
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 

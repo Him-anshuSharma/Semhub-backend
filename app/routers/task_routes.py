@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from app.services.verify_firebase_token import verify_firebase_token as get_user_id
+from app.services.verify_firebase_token import get_verified_user_id
 from app.models.pydantic_models import Task
 from db.services.user_services import get_user_by_firebase_id
 import app.services.pydantic_map_sqlalchemy as model_map
@@ -21,29 +21,48 @@ router = APIRouter(prefix="/task", tags=["Task"])
 
 # Create Task
 @router.post("/add-task", response_model=Task)
-async def add_task_route(task: Task, user_id: str, db: Session = Depends(get_db)):
-    orm_task = model_map.pydantic_task_to_orm(task)
+async def add_task_route(
+    task: Task,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new task.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return add_task(orm_task, user, db)
+            
+        orm_task = model_map.pydantic_task_to_orm(task)
+        db_task = add_task(orm_task, user, db)
+        return model_map.orm_task_to_pydantic(db_task)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # Get Single Task
 @router.get("/get-task/{task_id}", response_model=Task)
-async def get_task_route(task_id: int, user_id: str, db: Session = Depends(get_db)):
+async def get_task_route(
+    task_id: int,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a single task by ID.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
         task = get_task_by_id(task_id, db)
-        if not task or task.user_id != user.id:
+        if not task:
             raise HTTPException(status_code=404, detail="Task not found")
+            
+        if task.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to access this task")
             
         return model_map.orm_task_to_pydantic(task)
     except Exception as e:
@@ -51,16 +70,27 @@ async def get_task_route(task_id: int, user_id: str, db: Session = Depends(get_d
 
 # Update Task
 @router.put("/update-task/{task_id}", response_model=Task)
-async def update_task_route(task_id: int, task: Task, user_id: str, db: Session = Depends(get_db)):
+async def update_task_route(
+    task_id: int,
+    task: Task,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Update an existing task.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
         existing_task = get_task_by_id(task_id, db)
-        if not existing_task or existing_task.user_id != user.id:
+        if not existing_task:
             raise HTTPException(status_code=404, detail="Task not found")
+        
+        if existing_task.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to update this task")
         
         updated_task = update_task(model_map.pydantic_task_to_orm(task), db)
         return model_map.orm_task_to_pydantic(updated_task)
@@ -69,16 +99,26 @@ async def update_task_route(task_id: int, task: Task, user_id: str, db: Session 
 
 # Delete Task
 @router.delete("/delete-task/{task_id}")
-async def delete_task_route(task_id: int, user_id: str, db: Session = Depends(get_db)):
+async def delete_task_route(
+    task_id: int,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a task by ID.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
         task = get_task_by_id(task_id, db)
-        if not task or task.user_id != user.id:
+        if not task:
             raise HTTPException(status_code=404, detail="Task not found")
+        
+        if task.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this task")
         
         delete_task(task, db)
         return {"message": "Task deleted successfully"}
@@ -87,10 +127,16 @@ async def delete_task_route(task_id: int, user_id: str, db: Session = Depends(ge
 
 # Get All Tasks for User
 @router.get("/get-tasks", response_model=list[Task])
-async def get_tasks_route(user_id: str, db: Session = Depends(get_db)):
+async def get_tasks_route(
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all tasks for the authenticated user.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
@@ -101,10 +147,17 @@ async def get_tasks_route(user_id: str, db: Session = Depends(get_db)):
 
 # Optional Filter Endpoints
 @router.get("/tasks-by-status/{status}", response_model=list[Task])
-async def get_tasks_by_status_route(status: str, user_id: str, db: Session = Depends(get_db)):
+async def get_tasks_by_status_route(
+    status: str,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Get tasks by status.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
@@ -114,10 +167,17 @@ async def get_tasks_by_status_route(status: str, user_id: str, db: Session = Dep
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/tasks-by-type/{task_type}", response_model=list[Task])
-async def get_tasks_by_type_route(task_type: str, user_id: str, db: Session = Depends(get_db)):
+async def get_tasks_by_type_route(
+    task_type: str,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Get tasks by type.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
@@ -127,10 +187,17 @@ async def get_tasks_by_type_route(task_type: str, user_id: str, db: Session = De
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/tasks-by-goal/{goal_id}", response_model=list[Task])
-async def get_tasks_by_goal_route(goal_id: int, user_id: str, db: Session = Depends(get_db)):
+async def get_tasks_by_goal_route(
+    goal_id: int,
+    user_id: str = Depends(get_verified_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Get tasks by goal ID.
+    Requires Firebase authentication token in the Authorization header.
+    """
     try:
-        uid = get_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
