@@ -12,7 +12,7 @@ from db.services.goal_services import (
     delete_goal,
     get_goals_by_user_id,
 )
-from db.services.task_services import add_task, get_task_by_id
+from db.services.task_services import add_task, get_task_by_user_id_and_task_title
 from db.models.sqlalchemy_models import Task as DbTask
 from db.init_db import get_session as get_db
 
@@ -38,7 +38,9 @@ async def addGoal(
         
         # Process each task reference
         for task_ref in goal.target_tasks:
-            task = get_task_by_id(task_ref.id, db) if task_ref.id else None
+            task = get_task_by_user_id_and_task_title(
+                user.id, task_ref.title, db
+            )
             if not task:
                 new_task = DbTask(
                     title=task_ref.title,
@@ -88,17 +90,28 @@ async def updateGoal(goal_id: str, goal: Goal, user_id: str, db: Session = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/delete-goal/{goal_id}")
-async def deleteGoal(goal_id: str, user_id: str, db: Session = Depends(get_db)):
+async def deleteGoal(
+    goal_id: int,  # Changed type to int
+    user_id: str = Depends(get_verified_user_id),  # Added token verification
+    db: Session = Depends(get_db)
+):
     try:
-        uid = get_verified_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        existing_goal = get_goal_by_id(goal_id, db)
-        if not existing_goal:
+            
+        # Get goal and verify ownership
+        goal = get_goal_by_id(goal_id, db)
+        if not goal:
             raise HTTPException(status_code=404, detail="Goal not found")
+        if goal.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this goal")
+            
         delete_goal(goal_id, db)
-        return {"message": "Goal deleted successfully"}
+        return {
+            "success": True,
+            "message": "Goal deleted successfully"
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

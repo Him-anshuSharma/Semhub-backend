@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from app.services.onboarding_services import makeprofile
 from app.services.verify_firebase_token import verify_firebase_token
@@ -22,5 +23,18 @@ async def onboard(
     """
     # Extract user ID from the decoded token
     user_uid = decoded_token["uid"]
-    tasks_goals = await makeprofile(db, user_uid, audios, images)
-    return tasks_goals
+    response_data: Response = await makeprofile(db, user_uid, audios, images)
+    
+    if not response_data:
+        raise HTTPException(status_code=400, detail="Failed to process onboarding")
+    
+    # Convert Pydantic model to dict and handle datetime serialization
+    serialized_data = jsonable_encoder(response_data)
+
+    print("onboarding tasks_goals:\n", serialized_data)
+    
+    return {
+        "success": True,
+        "message": "Onboarding completed successfully",
+        "data": serialized_data
+    }

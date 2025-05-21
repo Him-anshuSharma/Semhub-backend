@@ -28,7 +28,7 @@ def orm_goal_to_pydantic(goal: Goal) -> PydanticGoal:
         id=goal.id,  # Added ID
         name=goal.name,  # Using name field until database migration is done
         type=goal.type,
-        target_tasks=[task.id for task in goal.target_tasks],  # Just pass the task IDs as strings
+        target_tasks=[str(task.id) for task in goal.target_tasks],  # Just pass the task IDs as strings
         target_date=goal.target_date.isoformat() if goal.target_date else None
     )
 

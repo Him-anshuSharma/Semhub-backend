@@ -74,6 +74,7 @@ async def makeprofile(
             contents=contents
         )
         json_data = json.loads(response.text.replace("```", "").replace("json", "").strip())
+        print(json_data)
         gemini_response = Response.model_validate(json_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI processing failed: {str(e)}")
