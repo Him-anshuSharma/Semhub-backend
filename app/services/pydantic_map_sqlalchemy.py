@@ -25,7 +25,7 @@ def orm_goal_to_pydantic(goal: Goal) -> PydanticGoal:
     return PydanticGoal(
         name=goal.name,
         type=goal.type,
-        target_tasks=[str(task.titles) for task in goal.target_tasks],
+        target_tasks=[str(task.title) for task in goal.target_tasks],
         target_date=goal.target_date.isoformat() if goal.target_date else None
     )
 

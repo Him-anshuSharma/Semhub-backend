@@ -103,13 +103,13 @@ async def deleteGoal(goal_id: str, user_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/get-goals", response_model=list[Goal])
-async def getGoals(user_id: str, db: Session = Depends(get_db)):
+async def getGoals(user_id: str = Depends(get_verified_user_id), db: Session = Depends(get_db)):
     try:
-        uid = get_verified_user_id(user_id)
-        user = get_user_by_firebase_id(uid, db)
+        user = get_user_by_firebase_id(user_id, db)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        goals = get_goals_by_user_id(user.id, db)
+        # Fix: Pass db first, then user.id
+        goals = get_goals_by_user_id(db, user.id)
         pydantic_goals = [model_map.orm_goal_to_pydantic(goal) for goal in goals]
         return pydantic_goals
     except Exception as e:
