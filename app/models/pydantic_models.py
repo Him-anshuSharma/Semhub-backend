@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 class Subtask(BaseModel):
+    id: Optional[int] = None
     title: str
     estimated_hours: Optional[float] = None
 
@@ -10,6 +11,7 @@ class Subtask(BaseModel):
         orm_mode = True
 
 class Task(BaseModel):
+    id: Optional[int] = None
     title: str
     type: str
     subject: str
@@ -22,9 +24,10 @@ class Task(BaseModel):
         orm_mode = True
 
 class Goal(BaseModel):
+    id: Optional[int] = None
     name: str
     type: str
-    target_tasks: List[str]  # Stores task titles as strings
+    target_tasks: List[int]  # Stores task titles as strings
     target_date: Optional[str] = None
 
     class Config:

@@ -6,12 +6,14 @@ from db.models.sqlalchemy_models import Task, Subtask, Goal, User, ScreenUsage, 
 
 def orm_subtask_to_pydantic(subtask: Subtask) -> PydanticSubtask:
     return PydanticSubtask(
+        id=subtask.id,  # Added ID
         title=subtask.title,
         estimated_hours=float(subtask.estimated_hours) if subtask.estimated_hours is not None else None
     )
 
 def orm_task_to_pydantic(task: Task) -> PydanticTask:
     return PydanticTask(
+        id=task.id,  # Added ID
         title=task.title,
         type=task.type,
         subject=task.subject,
@@ -23,11 +25,13 @@ def orm_task_to_pydantic(task: Task) -> PydanticTask:
 
 def orm_goal_to_pydantic(goal: Goal) -> PydanticGoal:
     return PydanticGoal(
-        name=goal.name,
+        id=goal.id,  # Added ID
+        name=goal.name,  # Using name field until database migration is done
         type=goal.type,
-        target_tasks=[str(task.title) for task in goal.target_tasks],
+        target_tasks=[task.id for task in goal.target_tasks],  # Just pass the task IDs as strings
         target_date=goal.target_date.isoformat() if goal.target_date else None
     )
+
 
 def orm_user_to_pydantic(user: User) -> PydanticUser:
     return PydanticUser(
