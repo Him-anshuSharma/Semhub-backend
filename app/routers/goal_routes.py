@@ -101,13 +101,13 @@ async def deleteGoal(
             raise HTTPException(status_code=404, detail="User not found")
             
         # Get goal and verify ownership
-        goal = get_goal_by_id(goal_id, db)
+        goal = get_goal_by_id(goal_id=goal_id, db=db)
         if not goal:
             raise HTTPException(status_code=404, detail="Goal not found")
         if goal.user_id != user.id:
             raise HTTPException(status_code=403, detail="Not authorized to delete this goal")
             
-        delete_goal(goal_id, db)
+        delete_goal(goal=goal, db=db)
         return {
             "success": True,
             "message": "Goal deleted successfully"

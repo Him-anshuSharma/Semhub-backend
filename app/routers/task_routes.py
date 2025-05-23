@@ -121,7 +121,10 @@ async def delete_task_route(
             raise HTTPException(status_code=403, detail="Not authorized to delete this task")
         
         delete_task(task, db)
-        return {"message": "Task deleted successfully"}
+        return {
+            "status": "success",
+            "message": "Task deleted successfully"
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

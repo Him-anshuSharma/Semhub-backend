@@ -60,7 +60,12 @@ class Goal(Base):
 
     # Relationships
     user = relationship("User", back_populates="goals")
-    target_tasks = relationship("Task", secondary=goal_task_association, back_populates="target_goals")
+    target_tasks = relationship(
+        "Task", 
+        secondary=goal_task_association, 
+        back_populates="target_goals", 
+        cascade="save-update, merge, delete"
+        )
 
 class ScreenUsage(Base):
     __tablename__ = 'screenusage'
