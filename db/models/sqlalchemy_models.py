@@ -1,8 +1,17 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, DateTime, Numeric
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
+from enum import Enum
 
 Base = declarative_base()
+
+
+class TaskStatus(Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    OVERDUE = "overdue"
+    CANCELLED = "cancelled"
 
 # Association table for many-to-many relationship between Task and Goal
 goal_task_association = Table(
@@ -30,11 +39,12 @@ class Task(Base):
     subject = Column(String(50), nullable=False)
     priority = Column(String(10), nullable=True)
     deadline = Column(DateTime, nullable=True)
-    estimated_hours = Column(Numeric(5,2), nullable=True)
+    estimated_hours = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.now())  # Fixed default
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)  
     user_id = Column(Integer, ForeignKey('users.id'))
+    status = Column(String,default=TaskStatus.NOT_STARTED.value)  # Default status set to NOT_STARTED
 
     # Relationships
     user = relationship("User", back_populates="tasks")

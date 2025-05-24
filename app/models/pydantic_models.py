@@ -2,6 +2,8 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+from db.models.sqlalchemy_models import TaskStatus
+
 class Subtask(BaseModel):
     id: Optional[int] = None
     title: str
@@ -17,8 +19,9 @@ class Task(BaseModel):
     subject: str
     deadline: Optional[str] = None
     priority: Optional[str] = None
-    estimated_hours: Optional[str] = None  # Stored as string for compatibility
+    estimated_hours: Optional[str] = None
     subtasks: List[Subtask] = []
+    status: Optional[str] = TaskStatus.NOT_STARTED.value
 
     class Config:
         orm_mode = True

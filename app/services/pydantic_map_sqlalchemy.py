@@ -11,6 +11,7 @@ def orm_subtask_to_pydantic(subtask: Subtask) -> PydanticSubtask:
         estimated_hours=float(subtask.estimated_hours) if subtask.estimated_hours is not None else None
     )
 
+
 def orm_task_to_pydantic(task: Task) -> PydanticTask:
     return PydanticTask(
         id=task.id,  # Added ID
@@ -20,7 +21,8 @@ def orm_task_to_pydantic(task: Task) -> PydanticTask:
         deadline=task.deadline.isoformat() if task.deadline else None,
         priority=task.priority,
         estimated_hours=str(task.estimated_hours) if task.estimated_hours is not None else None,
-        subtasks=[orm_subtask_to_pydantic(st) for st in task.subtasks]
+        subtasks=[orm_subtask_to_pydantic(st) for st in task.subtasks],
+        status=task.status
     )
 
 def orm_goal_to_pydantic(goal: Goal) -> PydanticGoal:
@@ -68,7 +70,8 @@ def pydantic_task_to_orm(task: PydanticTask, user_id: int = None) -> Task:
         deadline=datetime.fromisoformat(task.deadline) if task.deadline else None,
         priority=task.priority,
         estimated_hours=float(task.estimated_hours) if task.estimated_hours else None,
-        user_id=user_id
+        user_id=user_id,
+        status=task.status
     )
     orm_task.subtasks = [pydantic_subtask_to_orm(st) for st in task.subtasks]
     return orm_task
